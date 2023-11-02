@@ -18,18 +18,30 @@ require_once(ABSPATH . 'wp-admin/includes/file.php');
 // Register REST API endpoints
 add_action('rest_api_init', function () {
     // Endpoint to upload media
-    register_rest_route('custom/v1', '/upload-media', array(
+    register_rest_route('custom/v1', '/upload-media', [
         'methods' => 'POST',
         'callback' => 'upload_media',
         'permission_callback' => '__return_true',
-    ));
+    ]);
 
     // Endpoint to retrieve uploaded media
-    register_rest_route('custom/v1', '/get-media', array(
+    register_rest_route('custom/v1', '/get-media', [
         'methods' => 'GET',
         'callback' => 'get_media',
         'permission_callback' => '__return_true',
-    ));
+    ]);
+
+    // Endpoint to delete uploaded media
+    register_rest_route('custom/v1', '/delete-media', [
+        'methods' => 'DELETE',
+        'callback' => 'delete_media',
+        'permission_callback' => '__return_true',
+        'args' => [
+            'id' => [
+                'sanitize_callback' => 'absint', // Ensure the attachment ID is an integer.
+            ],
+        ],
+    ]);
 });
 
 // Callback function for uploading media
@@ -42,7 +54,7 @@ function upload_media($request)
         $file_ext = pathinfo($mediaFile['name'], PATHINFO_EXTENSION);
 
         // Allowed extensions
-        $allow_ext = ['jpeg','jpg','png','gif','webp','mp4','wmv','wav','svg'];
+        $allow_ext = ['jpeg','jpg','png','gif','webp','mp4','svg'];
 
         // Checking the file extension is allowed or not
         if (!in_array($file_ext, $allow_ext)){
@@ -84,14 +96,14 @@ function upload_media($request)
             if (!is_wp_error($attachment_id)) {
                 // Generate attachment metadata and update the database
                 $attachment_data = wp_generate_attachment_metadata($attachment_id, $upload['file']);
-                wp_update_attachment_metadata($attachment_id, $attachment_data);
 
                 $response = [
                     'message' => 'Media uploaded and inserted into the Media Library',
                     'attachment_id' => $attachment_id,
                 ];
+                wp_send_json_success($response, 202);
 
-                wp_send_json_success($response, 201);
+                wp_update_attachment_metadata($attachment_id, $attachment_data);
             } else {
                 wp_send_json_error(['error' => 'Failed to insert media into the Media Library.  An unexpected error occurred on the server.'], 500);
             }
@@ -141,4 +153,24 @@ function get_media($request)
         wp_send_json_error(['error' => 'No media items found for the given page'], 204);
     }
 }
+}
+
+// Callback function for deleting media
+
+function delete_media($request) {
+    $mediaId = $request->get_param('id');
+
+    // Check if the attachment ID is provided in the request.
+    if(empty($mediaId) || !is_numeric($mediaId)) {
+        return new WP_Error('invalid_attachment_id', 'Invalid or missing attachment ID', ['status' => 400]);
+    }
+
+    // Check if the attachment exists.
+    if (!wp_attachment_is_image($mediaId)) {
+        return new WP_Error('invalid_attachment', 'Attachment not found or not an image', array('status' => 404));
+    }
+
+    // Attempt to delete the attachment.
+    $result = wp_delete_attachment($mediaId, true);
+    var_dump($result);
 }
