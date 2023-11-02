@@ -12,7 +12,6 @@ if (!defined('ABSPATH')) {
 }
 
 // Load necessary files
-require_once(ABSPATH . 'wp-admin/includes/image.php');
 require_once(ABSPATH . 'wp-admin/includes/media.php');
 require_once(ABSPATH . 'wp-admin/includes/file.php');
 require_once(plugin_dir_path(__FILE__) . 'api/endpoints/upload-media.php');
