@@ -56,17 +56,16 @@ function upload_media($request) {
             }
 
             if (!is_wp_error($attachment_id)) {
-                // Generate attachment metadata and update the database
-                $attachment_data = wp_generate_attachment_metadata($attachment_id, $upload['file']);
+                // Schedule the background task (Cron job)
+                wp_schedule_single_event(time(), 'update_attachment_metadata_cron', array($attachment_id));
 
                 $response = [
                     'message' => 'Media uploaded and inserted into the Media Library',
                     'attachment_id' => $attachment_id,
                 ];
                 wp_send_json_success($response, 202);
-
-                wp_update_attachment_metadata($attachment_id, $attachment_data);
-            } else {
+            }
+            else {
                 wp_send_json_error(['error' => 'Failed to insert media into the Media Library.  An unexpected error occurred on the server.'], 500);
             }
         }
@@ -74,3 +73,10 @@ function upload_media($request) {
         wp_send_json_error(['error' => 'Media file not provided or it exceeded the media size limit'], 413);
     }
 }
+
+function update_attachment_metadata_background($attachment_id) {
+    // Generate attachment metadata and update the database
+    $attachment_data = wp_generate_attachment_metadata($attachment_id, get_attached_file($attachment_id));
+    wp_update_attachment_metadata($attachment_id, $attachment_data);
+}
+add_action('update_attachment_metadata_cron', 'update_attachment_metadata_background');
