@@ -12,7 +12,7 @@ function upload_media($request) {
 
     $allow_ext = explode(',', get_option('custom_media_api_file_ext'));
 
-    $max_size = intval(get_option('custom_media_api_max_size', 2)); // Max size default 2 MB
+    $max_size = intval(get_option('custom_media_api_max_size', 2)); // Default max size 2 MB
     $maxFileSize = $max_size * 1024 * 1024;
 
     if (!empty($_FILES) && !empty($_FILES['file']['name'])) {
@@ -22,13 +22,13 @@ function upload_media($request) {
 
         // Checking the file extension is allowed or not
         if (!in_array($file_ext, $allow_ext)){
-            wp_send_json_error(['error' => 'This extension is not allow.'], 400);
+            wp_send_json(['error' => 'This extension is not allow.'], 400);
         }
 
         $fileSize = $file['size'];
         if ($fileSize > $maxFileSize || $fileSize === 0) {
             // Reject the file if it exceeds the maximum limit
-            wp_send_json_error(['error' => 'File size exceeds the maximum limit'], 413);
+            wp_send_json(['error' => 'File size exceeds the maximum limit'], 413);
         }
 
         $fileName = pathinfo($file['name'], PATHINFO_FILENAME);
@@ -39,7 +39,7 @@ function upload_media($request) {
 
         if ($upload['error']) {
             // Handle upload error
-            wp_send_json_error(array('error' => $upload['error']), 404);
+            wp_send_json(array('error' => $upload['error']), 404);
         } else {
             // Insert the uploaded media into the Media Library
             $attachment_data = [
@@ -63,14 +63,14 @@ function upload_media($request) {
                     'message' => 'Media uploaded and inserted into the Media Library',
                     'attachment_id' => $attachment_id,
                 ];
-                wp_send_json_success($response, 202);
+                wp_send_json($response, 202);
             }
             else {
-                wp_send_json_error(['error' => 'Failed to insert media into the Media Library.  An unexpected error occurred on the server.'], 500);
+                wp_send_json(['error' => 'Failed to insert media into the Media Library.  An unexpected error occurred on the server.'], 500);
             }
         }
     } else {
-        wp_send_json_error(['error' => 'Media file not provided or it exceeded the media size limit'], 413);
+        wp_send_json(['error' => 'Media file not provided or it exceeded the media size limit'], 413);
     }
 }
 

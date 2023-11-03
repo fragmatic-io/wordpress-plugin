@@ -39,7 +39,8 @@ function get_media($request) {
                     'caption' => $item->post_excerpt,
                 ];
             }
-            wp_send_json_success($response, 200);
+
+            wp_send_json($response, 200);
         }
         else{
             // 404 (Not Found) when no media items are found

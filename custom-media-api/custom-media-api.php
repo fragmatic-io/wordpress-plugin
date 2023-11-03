@@ -4,6 +4,9 @@
  * Description: This plugin creates an API for media
  * Version: 1.0
  * Author: Akshat
+ *
+ * This plugin sets up a custom media API for WordPress. It provides endpoints for uploading,
+ * retrieving, and deleting media, as well as implementing authentication for these operations.
 */
 
 if (!defined('ABSPATH')) {
@@ -19,6 +22,4 @@ require_once(plugin_dir_path(__FILE__) . 'api/endpoints/upload-media.php');
 require_once(plugin_dir_path(__FILE__) . 'api/endpoints/get-media.php');
 require_once(plugin_dir_path(__FILE__) . 'api/endpoints/delete-media.php');
 require_once(plugin_dir_path(__FILE__) . 'api/authentication.php');
-
-// Include the settings page file
-require plugin_dir_path(__FILE__) . 'includes/settings-page.php';
+require_once(plugin_dir_path(__FILE__) . 'includes/settings-page.php');

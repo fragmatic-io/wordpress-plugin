@@ -1,7 +1,19 @@
 <?php
 
+/**
+ * Custom Media API Settings
+ *
+ * This file contains functions for managing the settings of the Custom Media API plugin.
+ */
+
+/**
+ * Adds a menu page for Custom Media API settings in the WordPress admin.
+ */
 add_action('admin_menu', 'custom_media_api_add_menu');
 
+/**
+ * Callback function to display the Custom Media API settings page.
+ */
 function custom_media_api_add_menu() {
     add_menu_page('Custom Media API Settings', 'Custom Media API', 'manage_options', 'custom-media-api-settings', 'custom_media_api_settings_page');
 }
@@ -36,8 +48,6 @@ function custom_media_api_settings_page() {
         update_option('custom_media_api_per_page', $per_page);
         update_option('custom_media_api_max_size', $max_size);
     }
-
-    // Display the settings form
     ?>
     <div class="wrap">
         <h2>Custom Media API Settings</h2>

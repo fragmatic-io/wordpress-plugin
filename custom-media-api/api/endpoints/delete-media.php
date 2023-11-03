@@ -12,21 +12,21 @@ function delete_media($request) {
 
     // Check if the attachment ID is provided in the request.
     if(empty($mediaId) || !is_numeric($mediaId)) {
-        return new WP_Error('invalid_attachment_id', 'Invalid or missing attachment ID', ['status' => 400]);
+        wp_send_json(['invalid_attachment_id' => 'Invalid or missing attachment ID'], 400);
     }
 
     // Check if the attachment exists.
     if (!wp_attachment_is_image($mediaId)) {
-        return new WP_Error('invalid_attachment', 'Attachment not found or not an image', array('status' => 404));
+        wp_send_json(['invalid_attachment' => 'Attachment not found'], 404);
     }
 
     // Attempt to delete the attachment.
     $result = wp_delete_attachment($mediaId, true);
 
     if ($result === false) {
-        return new WP_Error('delete_error', 'Failed to delete the attachment', array('status' => 500));
+        wp_send_json(['delete_error' => 'Failed to delete the attachment'], 500);
     }
 
     // Return a success response.
-    wp_send_json_success(['message' => 'Media deleted successfully'], 204);
+    wp_send_json(['message' => 'Media deleted successfully'], 200);
 }
