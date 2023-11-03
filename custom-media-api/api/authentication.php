@@ -24,10 +24,9 @@ function user_authentication($request) {
                 }
 
                  // Check if the user has delete_files capability for DELETE requests
-                 if ($request->get_method() === 'DELETE' && $user->has_cap('delete_files')) {
+                 if ($request->get_method() === 'DELETE' && $user->has_cap('delete_posts')) {
                     return true;
                 }
-                return new WP_Error('rest_forbidden', 'Insufficient permissions.', ['status' => 403]);
             }
             else {
                 return new WP_Error('rest_forbidden', 'Insufficient permissions.', ['status' => 403]);

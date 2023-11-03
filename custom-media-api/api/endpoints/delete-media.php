@@ -28,5 +28,5 @@ function delete_media($request) {
     }
 
     // Return a success response.
-    wp_send_json_success(['message' => 'Media deleted successfully'], 200);
+    wp_send_json_success(['message' => 'Media deleted successfully'], 204);
 }
