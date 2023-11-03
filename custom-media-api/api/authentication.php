@@ -11,7 +11,27 @@ function user_authentication($request) {
             return new WP_Error('rest_forbidden', 'Invalid credentials.', ['status' => 401]);
         }
         else{
-            return true;
+            // Check for specific permissions here
+            if($user->has_cap('read')){
+                // Allow access to the GET API
+                if($request->get_method() === 'GET'){
+                    return true;
+                }
+
+                // Check if the user has upload_files capability for POST requests
+                if ($request->get_method() === 'POST' && $user->has_cap('upload_files')) {
+                    return true;
+                }
+
+                 // Check if the user has delete_files capability for DELETE requests
+                 if ($request->get_method() === 'DELETE' && $user->has_cap('delete_files')) {
+                    return true;
+                }
+                return new WP_Error('rest_forbidden', 'Insufficient permissions.', ['status' => 403]);
+            }
+            else {
+                return new WP_Error('rest_forbidden', 'Insufficient permissions.', ['status' => 403]);
+            }
         }
     }
 

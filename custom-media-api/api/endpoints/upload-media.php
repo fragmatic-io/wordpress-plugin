@@ -74,6 +74,7 @@ function upload_media($request) {
     }
 }
 
+// Callback function for update_attachment_metadata_cron
 function update_attachment_metadata_background($attachment_id) {
     // Generate attachment metadata and update the database
     $attachment_data = wp_generate_attachment_metadata($attachment_id, get_attached_file($attachment_id));
