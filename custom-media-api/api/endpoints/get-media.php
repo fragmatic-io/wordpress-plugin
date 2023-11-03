@@ -8,7 +8,8 @@ add_action('rest_api_init', function () {
 });
 
 function get_media($request) {
-    $per_page = 5; // Set the number of attachments to show per page.
+    $per_page = intval(get_option('custom_media_api_per_page', 5));
+    // $per_page = 5; // Set the number of attachments to show per page.
     $page = $request['page']; // Get the requested page number from the API request.
 
     if (isset($page) && (!is_numeric($page) || $page < 1)) {

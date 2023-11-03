@@ -19,3 +19,6 @@ require_once(plugin_dir_path(__FILE__) . 'api/endpoints/upload-media.php');
 require_once(plugin_dir_path(__FILE__) . 'api/endpoints/get-media.php');
 require_once(plugin_dir_path(__FILE__) . 'api/endpoints/delete-media.php');
 require_once(plugin_dir_path(__FILE__) . 'api/authentication.php');
+
+// Include the settings page file
+require plugin_dir_path(__FILE__) . 'includes/settings-page.php';

@@ -10,23 +10,23 @@ add_action('rest_api_init', function () {
 function upload_media($request) {
     $response = [];
 
+    $allow_ext = explode(',', get_option('custom_media_api_file_ext'));
+
+    $max_size = intval(get_option('custom_media_api_max_size', 2)); // Max size default 2 MB
+    $maxFileSize = $max_size * 1024 * 1024;
+
     if (!empty($_FILES) && !empty($_FILES['file']['name'])) {
         $file = $_FILES['file']; // Getting media file
 
         $file_ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-
-        // Allowed extensions
-        $allow_ext = ['jpeg','jpg','png','gif','webp','mp4','svg'];
 
         // Checking the file extension is allowed or not
         if (!in_array($file_ext, $allow_ext)){
             wp_send_json_error(['error' => 'This extension is not allow.'], 400);
         }
 
-        $maxFileSize = 2 * 1024 * 1024; // Maximum file size: 2MB
         $fileSize = $file['size'];
-
-        if ($fileSize > $maxFileSize) {
+        if ($fileSize > $maxFileSize || $fileSize === 0) {
             // Reject the file if it exceeds the maximum limit
             wp_send_json_error(['error' => 'File size exceeds the maximum limit'], 413);
         }
