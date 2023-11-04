@@ -1,4 +1,9 @@
 <?php
+/**
+ * Registers a custom REST API route for retrieving media.
+ *
+ * This endpoint allows users to retrieve a list of media items from the WordPress Media Library via a GET request.
+ */
 add_action('rest_api_init', function () {
     register_rest_route('custom/v1', '/get-media', [
         'methods' => 'GET',
@@ -7,18 +12,23 @@ add_action('rest_api_init', function () {
     ]);
 });
 
-function get_media($request) {
-    $per_page = intval(get_option('custom_media_api_per_page', 5));
-    // $per_page = 5; // Set the number of attachments to show per page.
-    $page = $request['page']; // Get the requested page number from the API request.
+/**
+ * Retrieves a list of media items from the Media Library.
+ *
+ * This function processes the GET request to retrieve a paginated list of media items. It returns essential details
+ * for each media item, such as ID, URL, title, MIME type, file format, alt text, and caption.
+ *
+ * @param WP_REST_Request $request The incoming API request.
+ */
+function get_media($request)
+{
+    $per_page = intval(get_option('custom_media_api_per_page'));
+    $page = $request['page'];
 
     if (isset($page) && (!is_numeric($page) || $page < 1)) {
         wp_send_json_error(['error' => 'Invalid page parameter'], 400);
-    }
-    else{
-        // Calculate the offset for the database query.
+    } else {
         $offset = ($page - 1) * $per_page;
-
         $media = get_posts([
             'post_type' => 'attachment',
             'posts_per_page' => $per_page,
@@ -41,9 +51,7 @@ function get_media($request) {
             }
 
             wp_send_json($response, 200);
-        }
-        else{
-            // 404 (Not Found) when no media items are found
+        } else {
             wp_send_json_error(['error' => 'No media items found for the given page'], 204);
         }
     }
