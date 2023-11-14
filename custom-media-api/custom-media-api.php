@@ -21,5 +21,8 @@ require_once(ABSPATH . 'wp-admin/includes/file.php');
 require_once(plugin_dir_path(__FILE__) . 'api/endpoints/upload-media.php');
 require_once(plugin_dir_path(__FILE__) . 'api/endpoints/get-media.php');
 require_once(plugin_dir_path(__FILE__) . 'api/endpoints/delete-media.php');
+require_once(plugin_dir_path(__FILE__) . 'api/endpoints/update-css.php');
+require_once(plugin_dir_path(__FILE__) . 'api/endpoints/update-js.php');
 require_once(plugin_dir_path(__FILE__) . 'api/authentication.php');
 require_once(plugin_dir_path(__FILE__) . 'includes/settings-page.php');
+require_once(plugin_dir_path(__FILE__) . 'includes/dxp-settings.php');
