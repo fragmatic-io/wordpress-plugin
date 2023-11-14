@@ -1,2 +1,0 @@
-<?php
-// Keep Silence
