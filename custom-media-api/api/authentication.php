@@ -22,20 +22,12 @@ function user_authentication($request)
         if (is_wp_error($user)) {
             wp_send_json(['error' => 'rest_forbidden', 'message' => 'Invalid credentials.'], 401);
         } else {
-            if ($user->has_cap('read')) {
-                if ($request->get_method() === 'GET') {
-                    return true;
-                }
+            if ($request->get_method() === 'POST' && $user->has_cap('upload_files')) {
+                return true;
+            }
 
-                if ($request->get_method() === 'POST' && $user->has_cap('upload_files')) {
-                    return true;
-                }
-
-                if ($request->get_method() === 'DELETE' && $user->has_cap('delete_posts')) {
-                    return true;
-                }
-            } else {
-                wp_send_json(['error' => 'rest_forbidden', 'message' => 'Insufficient permissions.'], 403);
+            if ($request->get_method() === 'DELETE' && $user->has_cap('delete_posts')) {
+                return true;
             }
         }
     }

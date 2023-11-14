@@ -8,7 +8,7 @@ add_action('rest_api_init', function () {
     register_rest_route('custom/v1', '/get-media', [
         'methods' => 'GET',
         'callback' => 'get_media',
-        'permission_callback' => 'user_authentication',
+        'permission_callback' => '__return_true',
     ]);
 });
 
