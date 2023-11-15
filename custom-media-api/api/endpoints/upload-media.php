@@ -23,7 +23,7 @@ function upload_media($request)
 {
     $response = [];
 
-    $allow_ext = explode(', ', get_option('custom_media_api_file_ext'));
+    $allow_ext = explode(',', get_option('custom_media_api_file_ext'));
     $max_size = intval(get_option('custom_media_api_max_size'));
     $maxFileSize = $max_size * 1024 * 1024;
 
