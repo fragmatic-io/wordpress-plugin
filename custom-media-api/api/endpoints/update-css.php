@@ -50,9 +50,9 @@ function fetch_and_cache_css_data() {
 
     // Creating URL for the API.
     $url = $middleware . '/slot/search/filtered?format=css';
-
+    $test_url = $middleware . '/css';
     // Sending a GET request to get the data.
-    $response = wp_remote_get($url);
+    $response = wp_remote_get($test_url);
 
     if (!is_wp_error($response)) {
         // Get the response body.
