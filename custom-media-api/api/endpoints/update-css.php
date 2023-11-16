@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * Custom CSS API Integration
+ *
+ * This file contains functions to integrate and update CSS data from a custom API endpoint.
+ *
+ */
 // Register the REST API endpoint for updating CSS data
 function register_css_api_endpoint() {
     register_rest_route(

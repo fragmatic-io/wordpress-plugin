@@ -8,7 +8,7 @@ function dxp_admin_menu() {
         'manage_options',    // Capability required to access
         'dxp-config',        // Menu slug
         'dxp_config_form',    // Callback function to display the form
-        'dashicons-admin-generic'  // Icon (you can change this to a different Dashicon)
+        'dashicons-admin-generic'  // Icon
     );
 }
 
