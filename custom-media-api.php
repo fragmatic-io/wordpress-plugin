@@ -3,7 +3,7 @@
  * Plugin Name: Custom Media API
  * Description: This plugin creates an API for media
  * Version: 1.0
- * Author: Akshat
+ * Author: ControlTower
  *
  * This plugin sets up a custom media API for WordPress. It provides endpoints for uploading,
  * retrieving, and deleting media, as well as implementing authentication for these operations.
@@ -25,4 +25,4 @@ require_once(plugin_dir_path(__FILE__) . 'api/endpoints/update-css.php');
 require_once(plugin_dir_path(__FILE__) . 'api/endpoints/update-js.php');
 require_once(plugin_dir_path(__FILE__) . 'api/authentication.php');
 require_once(plugin_dir_path(__FILE__) . 'includes/settings-page.php');
-require_once(plugin_dir_path(__FILE__) . 'includes/dxp-settings.php');
+require_once(plugin_dir_path(__FILE__) . 'includes/control-tower-settings.php');

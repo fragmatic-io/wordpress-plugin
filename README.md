@@ -10,9 +10,12 @@
 - [Configuration](#configuration)
 - [Authentication](#authentication)
 - [API Endpoints](#api-endpoints)
-- [DXP Settings](#dxp-settings)
-- [Update CSS](#update-css)
-- [Update JS](#update-js)
+  - [Upload Media (`POST`)](#1-upload-media-post)
+  - [Get Media (`GET`)](#2-get-media-get)
+  - [Delete Media (`DELETE`)](#3-delete-media-delete)
+  - [Update CSS (`POST`)](#4-update-css-post)
+  - [Update JS (`POST`)](#5-update-js-post)
+- [ControlTower Settings](#controltower-settings)
 - [License](#license)
 
 ## Introduction
@@ -23,7 +26,7 @@ Enhance your WordPress site with Custom Media API, a plugin designed to optimize
 
 Getting started with Custom Media API is quick and easy:
 
-1. **Download**: Obtain the plugin ZIP file from the [GitHub repository](https://github.com/Akshat916/WP_API).
+1. **Download**: Obtain the plugin ZIP file.
 
 2. **Upload & Activate**: In your WordPress Admin Dashboard, navigate to "Plugins," choose "Add New," click "Upload Plugin," and select the downloaded ZIP file. Activate the "Custom Media API" plugin.
 
@@ -49,26 +52,73 @@ Ensure secure and permission-based media management with Custom Media API's basi
 
 ## API Endpoints
 
-Custom Media API provides the following API endpoints:
+### 1. Upload Media (`POST`)
 
-1. **Upload Media (`POST`)**: `/wp-json/custom/v1/upload-media`
-   - Upload media files securely to your WordPress site with this endpoint.
+Upload media files securely to your WordPress site.
 
-2. **Get Media (`GET`)**: `/wp-json/custom/v1/get-media`
-   - Retrieve media items from your WordPress media library programmatically.
+- **Endpoint:** `https://yourwordpresssite.com/?rest_route=/custom/v1/upload-media`
+- **Method:** `POST`
+- **Parameters:**
+  - `file` (Request body) - The file to upload.
+  - `alt_text` (Request body) - Alt text for the media (optional).
+  - `caption` (Request body) - Caption for the media (optional).
+- **Example:**
+  ```http
+  POST https://yourwordpresssite.com/?rest_route=/custom/v1/upload-media
+  Content-Type: multipart/form-data
 
-3. **Delete Media (`DELETE`)**: `/wp-json/custom/v1/delete-media`
-   - Safely remove media items from the WordPress media library using this endpoint.
+  file=@"/path/to/your/file.jpg"
+  alt_text= "Alt text for the media"
+  caption= "Caption for the media"
 
-4. **Update CSS (`POST`)**: `/wp-json/custom/v1/update-css`
-   - Update CSS data from a custom API endpoint.
+### 2. Get Media (`GET`)
 
-5. **Update JS (`POST`)**: `/wp-json/custom/v1/update-js`
-   - Update JS data from a custom API endpoint.
+Retrieve media items from your WordPress media library.
+
+- **Endpoint:** `https://yourwordpresssite.com/?rest_route=/custom/v1/get-media`
+- **Method:** `GET`
+- **Parameters:**
+  - `id` (Query parameter) - ID of the media item (optional).
+  - `page` (Query parameter) - Page number for pagination (optional).
+- **Examples:**
+  - Retrieve all media: `GET https://yourwordpresssite.com/?rest_route=/custom/v1/get-media`
+  - Retrieve specific media by ID: `GET https://yourwordpresssite.com/?rest_route=/custom/v1/get-media&id=123`
+  - Paginate through media: `GET https://yourwordpresssite.com/?rest_route=/custom/v1/get-media&page=2`
+
+### 3. Delete Media (`DELETE`)
+
+Safely remove media items from the WordPress media library.
+
+- **Endpoint:** `https://yourwordpresssite.com/?rest_route=/custom/v1/delete-media`
+- **Method:** `DELETE`
+- **Parameters:**
+  - `id` (Query parameter) - ID of the media item to delete.
+- **Example:**
+  ```http
+  DELETE https://yourwordpresssite.com/?rest_route=/custom/v1/delete-media&id=456
+
+### 4. Update CSS (`POST`)
+
+Update CSS data from a custom API endpoint.
+
+- **Endpoint:** `https://yourwordpresssite.com/?rest_route=/custom/v1/update-css`
+- **Method:** `POST`
+- **Parameters:**
+  - No parameters required.
+
+
+### 5. Update JS (`POST`)
+
+Update JS data from a custom API endpoint.
+
+- **Endpoint:** `https://yourwordpresssite.com/?rest_route=/custom/v1/update-js`
+- **Method:** `POST`
+- **Parameters:**
+  - No parameters required.
+
 
 For detailed guidance on using these endpoints, refer to the provided PHP code within the respective endpoint files: `upload-media.php`, `get-media.php`, `delete-media.php`, `update-css.php`, and `update-js.php`.
 
-## DXP Settings
+## ControlTower Settings
 
-Custom Media API integrates with DXP offers configurable settings. Access these settings under "DXP Configuration" in the WordPress Admin Dashboard.
-
+Custom Media API integrates with ControlTower offers configurable settings. Access these settings under "ControlTower Configuration" in the WordPress Admin Dashboard.

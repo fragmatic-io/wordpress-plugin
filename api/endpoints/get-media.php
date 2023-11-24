@@ -24,11 +24,35 @@ function get_media($request)
 {
     $per_page = intval(get_option('custom_media_api_per_page'));
     $raw_page = $request->get_param('page');
+    $media_id = $request->get_param('id');
+
+    if ($media_id !== null) {
+        // Retrieve a single media item by ID
+        $single_media = get_post($media_id);
+
+        if (!$single_media || $single_media->post_type !== 'attachment') {
+            wp_send_json(['error' => 'Media not found'], 404);
+        }
+
+        $response = [
+            'id' => $single_media->ID,
+            'rendered' => wp_get_attachment_url($single_media->ID),
+            'title' => get_the_title($single_media->ID),
+            'mime_type' => get_post_mime_type($single_media->ID),
+            'file_format' => pathinfo(get_attached_file($single_media->ID), PATHINFO_EXTENSION),
+            'alt_text' => get_post_meta($single_media->ID, '_wp_attachment_image_alt', true),
+            'caption' => $single_media->post_excerpt,
+        ];
+
+        wp_send_json($response, 200);
+    }
 
     if ($raw_page === null) {
         $page = 1;
     } elseif (!is_numeric($raw_page) || $raw_page <= 0) {
         wp_send_json(['error' => 'Invalid parameter(s): page'], 400);
+    } else {
+        $page = intval($raw_page);
     }
 
     $offset = ($page - 1) * $per_page;
