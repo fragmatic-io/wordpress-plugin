@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Registers a custom REST API route for uploading media.
  *
@@ -22,61 +23,82 @@ add_action('rest_api_init', function () {
 function upload_media($request)
 {
     $response = [];
-
     $allow_ext = explode(',', get_option('custom_media_api_file_ext'));
-    $max_size = intval(get_option('custom_media_api_max_size'));
-    $maxFileSize = $max_size * 1024 * 1024;
 
-    if (!empty($_FILES) && !empty($_FILES['file']['name'])) {
-        $file = $_FILES['file'];
+    $maxContentLength = $request->get_header('maxContentLength');
+    $maxBodyLength = $request->get_header('maxBodyLength');
 
-        $file_ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-
-        if (!in_array($file_ext, $allow_ext)) {
-            wp_send_json(['error' => 'This extension is not allow.'], 400);
-        }
-
-        $fileSize = $file['size'];
-        if ($fileSize > $maxFileSize || $fileSize === 0) {
-            wp_send_json(['error' => 'File size exceeds the maximum limit'], 413);
-        }
-
-        $fileName = pathinfo($file['name'], PATHINFO_FILENAME);
-        $fileType = wp_check_filetype($file['name'], null);
-
-        $upload = wp_upload_bits($file['name'], null, file_get_contents($file['tmp_name']));
-
-        if ($upload['error']) {
-            wp_send_json(array('error' => $upload['error']), 404);
-        } else {
-            $attachment_data = [
-                'post_mime_type' => $fileType['type'],
-                'post_title' => $fileName,
-                'post_content' => '',
-                'post_status' => 'inherit',
-                'post_excerpt' => $request->get_param('caption'),
-            ];
-            $attachment_id = wp_insert_attachment($attachment_data, $upload['file']);
-
-            if ($alt_text = $request->get_param('alt_text')) {
-                update_post_meta($attachment_id, '_wp_attachment_image_alt', $alt_text);
-            }
-
-            if (!is_wp_error($attachment_id)) {
-                wp_schedule_single_event(time(), 'update_attachment_metadata_cron', array($attachment_id));
-
-                $response = [
-                    'message' => 'Media uploaded and inserted into the Media Library',
-                    'attachment_id' => $attachment_id,
-                ];
-                wp_send_json($response, 202);
-            } else {
-                wp_send_json(['error' => 'Failed to insert media into the Media Library.  An unexpected error occurred on the server.'], 500);
-            }
-        }
-    } else {
-        wp_send_json(['error' => 'Media file not provided or it exceeded the media size limit'], 413);
+    if ($maxBodyLength === null && $maxContentLength === null) {
+        $maxBodyLength = 30000000; // 30 MB
+        $maxContentLength = 30000000; // 30 MB
     }
+
+    $maxFileSize = min($maxContentLength, $maxBodyLength);
+
+    // Read the raw POST data
+    $data = file_get_contents("php://input");
+
+    if (!$data || strlen($data) > $maxFileSize) {
+        wp_send_json(['error' => 'Media file not provided or it exceeded the media size limit'], 413);
+        return;
+    }
+
+    // Create a temporary file to store the binary data
+    $tmpfname = tempnam(sys_get_temp_dir(), 'upload');
+    file_put_contents($tmpfname, $data);
+
+    // Mimic the $_FILES structure
+    $filename = $request->get_header('filename'); // Assuming filename is passed in a header
+    $file = [
+        'name' => $filename,
+        'type' => mime_content_type($tmpfname),
+        'tmp_name' => $tmpfname,
+        'error' => 0,
+        'size' => filesize($tmpfname)
+    ];
+
+    // Check file extension
+    $file_ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    if (!in_array($file_ext, $allow_ext)) {
+        unlink($tmpfname); // Delete temporary file
+        wp_send_json(['error' => 'This extension is not allowed.'], 400);
+        return;
+    }
+
+    // Handle file upload
+    $upload = wp_upload_bits($file['name'], null, file_get_contents($file['tmp_name']));
+    if ($upload['error']) {
+        unlink($tmpfname); // Delete temporary file
+        wp_send_json(array('error' => $upload['error']), 404);
+        return;
+    } else {
+        $attachment_data = [
+            'post_mime_type' => $file['type'],
+            'post_title' => pathinfo($file['name'], PATHINFO_FILENAME),
+            'post_content' => '',
+            'post_status' => 'inherit',
+            'post_excerpt' => $request->get_param('caption'),
+        ];
+        $attachment_id = wp_insert_attachment($attachment_data, $upload['file']);
+
+        if ($alt_text = $request->get_param('alt_text')) {
+            update_post_meta($attachment_id, '_wp_attachment_image_alt', $alt_text);
+        }
+
+        if (!is_wp_error($attachment_id)) {
+            wp_schedule_single_event(time(), 'update_attachment_metadata_cron', array($attachment_id));
+            $response = [
+                'message' => 'Media uploaded and inserted into the Media Library',
+                'attachment_id' => $attachment_id,
+            ];
+            wp_send_json($response, 201);
+        } else {
+            wp_send_json(['error' => 'Failed to insert media into the Media Library. An unexpected error occurred on the server.'], 500);
+        }
+    }
+
+    // Delete the temporary file
+    unlink($tmpfname);
 }
 
 /**

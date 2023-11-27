@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Registers a custom REST API route for retrieving media.
  *
@@ -22,16 +23,16 @@ add_action('rest_api_init', function () {
  */
 function get_media($request)
 {
-    $per_page = intval(get_option('custom_media_api_per_page'));
+    $per_page = $request->get_param('size');
     $raw_page = $request->get_param('page');
     $media_id = $request->get_param('id');
+    $search_name = $request->get_param('name');
 
     if ($media_id !== null) {
-        // Retrieve a single media item by ID
         $single_media = get_post($media_id);
 
         if (!$single_media || $single_media->post_type !== 'attachment') {
-            wp_send_json(['error' => 'Media not found'], 404);
+            return new WP_Error('media_not_found', 'Media not found', ['status' => 404]);
         }
 
         $response = [
@@ -44,40 +45,71 @@ function get_media($request)
             'caption' => $single_media->post_excerpt,
         ];
 
-        wp_send_json($response, 200);
+        return new WP_REST_Response($response, 200);
     }
 
-    if ($raw_page === null) {
-        $page = 1;
-    } elseif (!is_numeric($raw_page) || $raw_page <= 0) {
-        wp_send_json(['error' => 'Invalid parameter(s): page'], 400);
+    $page = 1;
+    if ($raw_page !== null) {
+        $page = max(1, intval($raw_page));
+    }
+
+    if ($per_page === null) {
+        $per_page = 10;
     } else {
-        $page = intval($raw_page);
+        $per_page = max(1, intval($per_page));
     }
 
     $offset = ($page - 1) * $per_page;
-    $media = get_posts([
+
+    $query_args = [
         'post_type' => 'attachment',
         'posts_per_page' => $per_page,
         'offset' => $offset,
-    ]);
+        'post_status' => 'inherit',
+    ];
 
-    $response = [];
-    if ($media) {
-        foreach ($media as $item) {
-            $response[] = [
-                'id' => $item->ID,
-                'rendered' => wp_get_attachment_url($item->ID),
-                'title' => get_the_title($item->ID),
+    if (!empty($search_name)) {
+        $query_args['s'] = $search_name;
+    }
+    
+    $media_query = new WP_Query($query_args);
+
+    // TOOD: deprecate with more complex search query
+    if (!empty($search_name) && $media_query->found_posts === 0) {
+        unset($query_args['s']);
+        $query_args['name'] = $search_name;
+        $media_query = new WP_Query($query_args);
+    }
+
+    $total_items = $media_query->found_posts;
+    $total_pages = ceil($total_items / $per_page);
+
+    if ($page > $total_pages && $total_items > 0) {
+        return new WP_Error('invalid_page', 'Invalid page, please check!', ['status' => 400]);
+    }
+
+    $response = [
+        'results' => array_map(function ($item) {
+            return [
+                'mid' => $item->ID,
+                'link' => wp_get_attachment_url($item->ID),
+                'name' => $item->post_name,
+                'status' => $item->post_status,
                 'mime_type' => get_post_mime_type($item->ID),
                 'file_format' => pathinfo(get_attached_file($item->ID), PATHINFO_EXTENSION),
                 'alt_text' => get_post_meta($item->ID, '_wp_attachment_image_alt', true),
                 'caption' => $item->post_excerpt,
+                'created' => $item->post_date_gmt,
             ];
-        }
+        }, $media_query->posts),
+        'pager' => [
+            'count' => $total_items,
+            'pages' => $total_pages,
+            'items_per_page' => $per_page,
+            'current_page' => $page,
+            'next_page' => $page < $total_pages ? $page + 1 : null,
+        ]
+    ];
 
-        wp_send_json($response, 200);
-    } else {
-        wp_send_json(['message' => 'The page number requested is larger than the number of pages available..'], 400);
-    }
+    return new WP_REST_Response($response, 200);
 }
