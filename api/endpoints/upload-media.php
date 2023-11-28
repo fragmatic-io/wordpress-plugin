@@ -23,7 +23,7 @@ add_action('rest_api_init', function () {
 function upload_media($request)
 {
     $response = [];
-    $allow_ext = explode(',', get_option('custom_media_api_file_ext'));
+    $allow_ext = explode(',', get_option('media_file_ext'));
 
     $maxContentLength = $request->get_header('maxContentLength');
     $maxBodyLength = $request->get_header('maxBodyLength');
