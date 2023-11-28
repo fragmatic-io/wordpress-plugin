@@ -1,12 +1,13 @@
 <?php
 /**
- * Plugin Name: Custom Media API
- * Description: This plugin creates an API for media
+ * Plugin Name: Control Tower
+ * Description: Word Press Plug-in is a content management system for Control Tower.
  * Version: 1.0
  * Author: ControlTower
  *
  * This plugin sets up a custom media API for WordPress. It provides endpoints for uploading,
  * retrieving, and deleting media, as well as implementing authentication for these operations.
+ * Also this plugin implements the CT tracker on website.
 */
 
 if (!defined('ABSPATH')) {
@@ -24,5 +25,4 @@ require_once(plugin_dir_path(__FILE__) . 'api/endpoints/delete-media.php');
 require_once(plugin_dir_path(__FILE__) . 'api/endpoints/update-css.php');
 require_once(plugin_dir_path(__FILE__) . 'api/endpoints/update-js.php');
 require_once(plugin_dir_path(__FILE__) . 'api/authentication.php');
-require_once(plugin_dir_path(__FILE__) . 'includes/settings-page.php');
 require_once(plugin_dir_path(__FILE__) . 'includes/control-tower-settings.php');

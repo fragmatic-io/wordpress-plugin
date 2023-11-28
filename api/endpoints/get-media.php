@@ -71,10 +71,10 @@ function get_media($request)
     if (!empty($search_name)) {
         $query_args['s'] = $search_name;
     }
-    
+
     $media_query = new WP_Query($query_args);
 
-    // TOOD: deprecate with more complex search query
+    // TODO: deprecate with more complex search query
     if (!empty($search_name) && $media_query->found_posts === 0) {
         unset($query_args['s']);
         $query_args['name'] = $search_name;

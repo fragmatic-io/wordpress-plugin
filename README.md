@@ -58,18 +58,23 @@ Upload media files securely to your WordPress site.
 
 - **Endpoint:** `https://yourwordpresssite.com/?rest_route=/custom/v1/upload-media`
 - **Method:** `POST`
+- **Headers:**
+  - `Content-Type` : application/octet-stream
+  - `filename (Request header)` - The name of the file being uploaded.
 - **Parameters:**
   - `file` (Request body) - The file to upload.
   - `alt_text` (Request body) - Alt text for the media (optional).
   - `caption` (Request body) - Caption for the media (optional).
-- **Example:**
-  ```http
-  POST https://yourwordpresssite.com/?rest_route=/custom/v1/upload-media
-  Content-Type: multipart/form-data
+- **Maximum File Size:** 30 MB (configurable via headers)
+- **Allowed File Extensions:** Configured in WordPress options under media_file_ext (comma-separated list).
 
-  file=@"/path/to/your/file.jpg"
-  alt_text= "Alt text for the media"
-  caption= "Caption for the media"
+- **Example:**
+  curl -X POST \
+  https://yourwordpresssite.com/wp-json/custom/v1/upload-media \
+  -H 'Content-Type: application/octet-stream' \
+  -H 'filename: example.jpg' \
+  --data-binary '@/path/to/your/file.jpg'
+
 
 ### 2. Get Media (`GET`)
 
