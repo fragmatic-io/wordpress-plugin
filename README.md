@@ -1,4 +1,4 @@
-# Custom Media API for WordPress
+# Wordpress plugin
 
 **Custom Media API** is a versatile WordPress plugin designed to simplify and secure media management through a RESTful API. This plugin empowers you to perform common media operations programmatically, including uploading, retrieving, and deleting media files. Whether you're building a mobile app, custom frontend, or integrating with other services, Custom Media API enhances your media management capabilities.
 
