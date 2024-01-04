@@ -74,6 +74,13 @@ function get_media($request)
 
     $media_query = new WP_Query($query_args);
 
+    // Filter media items based on file extension
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG'];
+    $filtered_media = array_filter($media_query->posts, function ($item) use ($allowed_extensions) {
+        $file_extension = pathinfo(get_attached_file($item->ID), PATHINFO_EXTENSION);
+        return in_array(strtolower($file_extension), $allowed_extensions);
+    });
+
     // TODO: deprecate with more complex search query
     if (!empty($search_name) && $media_query->found_posts === 0) {
         unset($query_args['s']);
@@ -101,9 +108,9 @@ function get_media($request)
                 'caption' => $item->post_excerpt,
                 'created' => $item->post_date_gmt,
             ];
-        }, $media_query->posts),
+        }, $filtered_media),
         'pager' => [
-            'count' => $total_items,
+            'count' => count($filtered_media),
             'pages' => $total_pages,
             'items_per_page' => $per_page,
             'current_page' => $page,
