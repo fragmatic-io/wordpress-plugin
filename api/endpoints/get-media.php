@@ -48,10 +48,7 @@ function get_media($request)
         return new WP_REST_Response($response, 200);
     }
 
-    $page = 1;
-    if ($raw_page !== null) {
-        $page = max(1, intval($raw_page));
-    }
+    $page = isset($raw_page) ? max(1, intval($raw_page)) : 1;
 
     if ($per_page === null) {
         $per_page = 10;
@@ -59,12 +56,9 @@ function get_media($request)
         $per_page = max(1, intval($per_page));
     }
 
-    $offset = ($page - 1) * $per_page;
-
     $query_args = [
         'post_type' => 'attachment',
-        'posts_per_page' => $per_page,
-        'offset' => $offset,
+        'posts_per_page' => -1,
         'post_status' => 'inherit',
     ];
 
@@ -72,28 +66,35 @@ function get_media($request)
         $query_args['s'] = $search_name;
     }
 
-    $media_query = new WP_Query($query_args);
+    $all_media = get_posts($query_args);
 
     // Filter media items based on file extension
     $allowed_extensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG'];
-    $filtered_media = array_values(array_filter($media_query->posts, function ($item) use ($allowed_extensions) {
+    $filtered_media = array_values(array_filter($all_media, function ($item) use ($allowed_extensions) {
         $file_extension = pathinfo(get_attached_file($item->ID), PATHINFO_EXTENSION);
         return in_array(strtolower($file_extension), $allowed_extensions);
     }));
 
     // TODO: deprecate with more complex search query
-    if (!empty($search_name) && $media_query->found_posts === 0) {
+    if (!empty($search_name) && empty($filtered_media)) {
         unset($query_args['s']);
         $query_args['name'] = $search_name;
-        $media_query = new WP_Query($query_args);
+        $all_media = get_posts($query_args);
+        $filtered_media = array_values(array_filter($all_media, function ($item) use ($allowed_extensions) {
+            $file_extension = pathinfo(get_attached_file($item->ID), PATHINFO_EXTENSION);
+            return in_array(strtolower($file_extension), $allowed_extensions);
+        }));
     }
 
-    $total_items = $media_query->found_posts;
+    $total_items = count($filtered_media);
     $total_pages = ceil($total_items / $per_page);
 
     if ($page > $total_pages && $total_items > 0) {
         return new WP_Error('invalid_page', 'Invalid page, please check!', ['status' => 400]);
     }
+
+    $start_index = ($page - 1) * $per_page;
+    $paginated_media = array_slice($filtered_media, $start_index, $per_page);
 
     $response = [
         'results' => array_map(function ($item) {
@@ -108,14 +109,14 @@ function get_media($request)
                 'caption' => $item->post_excerpt,
                 'created' => $item->post_date_gmt,
             ];
-        }, $filtered_media),
+        }, $paginated_media),
         'pager' => [
             'count' => count($filtered_media),
             'pages' => $total_pages,
             'items_per_page' => $per_page,
             'current_page' => $page,
             'next_page' => $page < $total_pages ? $page + 1 : null,
-        ]
+        ],
     ];
 
     return new WP_REST_Response($response, 200);
