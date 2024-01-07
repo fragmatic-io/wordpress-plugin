@@ -52,8 +52,11 @@ function get_media($request)
 
     if ($per_page === null) {
         $per_page = 10;
-    } else {
-        $per_page = max(1, intval($per_page));
+    }
+    elseif (intval($per_page) === 0){
+        return new WP_Error('invalid_size', 'Invalid size, please check!', ['status' => 400]);
+    }else {
+        $per_page = intval($per_page);
     }
 
     $query_args = [
