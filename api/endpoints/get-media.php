@@ -48,7 +48,7 @@ function get_media($request)
         return new WP_REST_Response($response, 200);
     }
 
-    $page = isset($raw_page) ? max(1, intval($raw_page)) : 1;
+    $page = isset($raw_page) ? max(0, intval($raw_page)) : 0;
 
     if ($per_page === null) {
         $per_page = 10;
@@ -87,13 +87,13 @@ function get_media($request)
     }
 
     $total_items = count($filtered_media);
-    $total_pages = ceil($total_items / $per_page);
+    $total_pages = ceil($total_items / $per_page) - 1;
 
     if ($page > $total_pages && $total_items > 0) {
         return new WP_Error('invalid_page', 'Invalid page, please check!', ['status' => 400]);
     }
 
-    $start_index = ($page - 1) * $per_page;
+    $start_index = $page * $per_page;
     $paginated_media = array_slice($filtered_media, $start_index, $per_page);
 
     $response = [
@@ -112,7 +112,7 @@ function get_media($request)
         }, $paginated_media),
         'pager' => [
             'count' => count($filtered_media),
-            'pages' => $total_pages,
+            'pages' => $total_pages + 1,
             'items_per_page' => $per_page,
             'current_page' => $page,
             'next_page' => $page < $total_pages ? $page + 1 : null,
