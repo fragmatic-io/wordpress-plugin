@@ -27,23 +27,17 @@ function get_media($request)
     $raw_page = $request->get_param('page');
     $media_id = $request->get_param('id');
     $search_name = $request->get_param('name');
+    $batch_size = 50; // Adjust the batch size based on your server's memory limit
 
     if ($media_id !== null) {
+        // Process a single media item
         $single_media = get_post($media_id);
 
         if (!$single_media || $single_media->post_type !== 'attachment') {
             return new WP_Error('media_not_found', 'Media not found', ['status' => 404]);
         }
 
-        $response = [
-            'id' => $single_media->ID,
-            'rendered' => wp_get_attachment_url($single_media->ID),
-            'title' => get_the_title($single_media->ID),
-            'mime_type' => get_post_mime_type($single_media->ID),
-            'file_format' => pathinfo(get_attached_file($single_media->ID), PATHINFO_EXTENSION),
-            'alt_text' => get_post_meta($single_media->ID, '_wp_attachment_image_alt', true),
-            'caption' => $single_media->post_excerpt,
-        ];
+        $response = get_media_response_data($single_media);
 
         return new WP_REST_Response($response, 200);
     }
@@ -52,16 +46,15 @@ function get_media($request)
 
     if ($per_page === null) {
         $per_page = 10;
-    }
-    elseif (intval($per_page) === 0){
+    } elseif (intval($per_page) === 0) {
         return new WP_Error('invalid_size', 'Invalid size, please check!', ['status' => 400]);
-    }else {
+    } else {
         $per_page = intval($per_page);
     }
 
     $query_args = [
         'post_type' => 'attachment',
-        'posts_per_page' => -1,
+        'posts_per_page' => $batch_size,
         'post_status' => 'inherit',
     ];
 
@@ -69,27 +62,28 @@ function get_media($request)
         $query_args['s'] = $search_name;
     }
 
-    $all_media = get_posts($query_args);
-
-    // Filter media items based on file extension
+    $all_media = [];
+    $paged = 1;
     $allowed_extensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG'];
-    $filtered_media = array_values(array_filter($all_media, function ($item) use ($allowed_extensions) {
-        $file_extension = pathinfo(get_attached_file($item->ID), PATHINFO_EXTENSION);
-        return in_array(strtolower($file_extension), $allowed_extensions);
-    }));
 
-    // TODO: deprecate with more complex search query
-    if (!empty($search_name) && empty($filtered_media)) {
-        unset($query_args['s']);
-        $query_args['name'] = $search_name;
-        $all_media = get_posts($query_args);
-        $filtered_media = array_values(array_filter($all_media, function ($item) use ($allowed_extensions) {
+    // Process batches of media until all items are fetched
+    do {
+        $query_args['paged'] = $paged;
+        $batch_media = get_posts($query_args);
+
+        foreach ($batch_media as $item) {
             $file_extension = pathinfo(get_attached_file($item->ID), PATHINFO_EXTENSION);
-            return in_array(strtolower($file_extension), $allowed_extensions);
-        }));
-    }
 
-    $total_items = count($filtered_media);
+            if (in_array(strtolower($file_extension), $allowed_extensions)) {
+                $all_media[] = $item;
+            }
+        }
+
+        $paged++;
+
+    } while (!empty($batch_media));
+
+    $total_items = count($all_media);
     $total_pages = ceil($total_items / $per_page) - 1;
 
     if ($page > $total_pages && $total_items > 0) {
@@ -97,24 +91,12 @@ function get_media($request)
     }
 
     $start_index = $page * $per_page;
-    $paginated_media = array_slice($filtered_media, $start_index, $per_page);
+    $paginated_media = array_slice($all_media, $start_index, $per_page);
 
     $response = [
-        'results' => array_map(function ($item) {
-            return [
-                'mid' => $item->ID,
-                'link' => wp_get_attachment_url($item->ID),
-                'name' => $item->post_name,
-                'status' => $item->post_status,
-                'mime_type' => get_post_mime_type($item->ID),
-                'file_format' => pathinfo(get_attached_file($item->ID), PATHINFO_EXTENSION),
-                'alt_text' => get_post_meta($item->ID, '_wp_attachment_image_alt', true),
-                'caption' => $item->post_excerpt,
-                'created' => $item->post_date_gmt,
-            ];
-        }, $paginated_media),
+        'results' => array_map('get_media_response_data', $paginated_media),
         'pager' => [
-            'count' => count($filtered_media),
+            'count' => $total_items,
             'pages' => $total_pages + 1,
             'items_per_page' => $per_page,
             'current_page' => $page,
@@ -123,4 +105,19 @@ function get_media($request)
     ];
 
     return new WP_REST_Response($response, 200);
+}
+
+function get_media_response_data($media)
+{
+    return [
+        'mid' => $media->ID,
+        'link' => wp_get_attachment_url($media->ID),
+        'name' => $media->post_name,
+        'status' => $media->post_status,
+        'mime_type' => get_post_mime_type($media->ID),
+        'file_format' => pathinfo(get_attached_file($media->ID), PATHINFO_EXTENSION),
+        'alt_text' => get_post_meta($media->ID, '_wp_attachment_image_alt', true),
+        'caption' => $media->post_excerpt,
+        'created' => $media->post_date_gmt,
+    ];
 }
