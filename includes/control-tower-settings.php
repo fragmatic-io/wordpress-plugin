@@ -29,7 +29,7 @@ function control_tower_form() {
 
     // Handle form submission and save the values
     if (isset($_POST['submit'])) {
-        $file_ext = sanitize_text_field($_POST['media_file_ext']) ?: 'jpeg,jpg,png,gif,webp,mp4';
+        $file_ext = isset($_POST['media_file_ext']) ? sanitize_text_field($_POST['media_file_ext']) : 'jpeg,jpg,png,gif,webp,mp4';
         $control_tower_scope = sanitize_text_field($_POST['control_tower_scope']);
         $control_tower_middleware_url = esc_url_raw($_POST['control_tower_middleware_url']);
         $enable = isset($_POST['enable']) ? '1' : '';
