@@ -10,28 +10,22 @@
  * permissions for the requested API method. Returns a WP_Error object with appropriate messages and
  * status codes for authentication and permission failures.
  */
-function user_authentication($request)
-{
-    if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
-        $username = $_SERVER['PHP_AUTH_USER'];
-        $password = $_SERVER['PHP_AUTH_PW'];
-
-        // Authenticating user
-        $user = wp_authenticate($username, $password);
-
-        if (is_wp_error($user)) {
-            wp_send_json(['error' => 'rest_forbidden', 'message' => 'Invalid credentials.'], 401);
-        } else {
-            if ($request->get_method() === 'POST' && $user->has_cap('upload_files')) {
-                return true;
-            }
-
-            if ($request->get_method() === 'DELETE' && $user->has_cap('delete_posts')) {
-                return true;
-            }
-        }
+function user_authentication($request) {
+    if (!isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'])) {
+        wp_send_json(['error' => 'rest_forbidden', 'message' => 'Authentication required.'], 401);
     }
 
-    wp_send_json(['error' => 'rest_forbidden', 'message' => 'Authentication required.'], 401);
-    return false;
+    $user = wp_authenticate($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
+
+    if (is_wp_error($user)) {
+        wp_send_json(['error' => 'rest_forbidden', 'message' => 'Invalid credentials.'], 401);
+    }
+
+    $method = $request->get_method();
+    if ($method === 'POST' && !$user->has_cap('upload_files') ||
+        $method === 'DELETE' && !$user->has_cap('delete_posts')) {
+        wp_send_json(['error' => 'rest_forbidden', 'message' => 'Insufficient permissions.'], 403);
+    }
+
+    return true;
 }
