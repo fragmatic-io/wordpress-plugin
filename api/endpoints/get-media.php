@@ -65,10 +65,10 @@ function get_media($request)
     $total_pages = ceil($total_items / $per_page) - 1;
 
     do {
-        $query_args['posts_per_page'] = $batch_size,
-        $query_args['paged'] = $paged,
+        $query_args['posts_per_page'] = $batch_size;
+        $query_args['paged'] = $paged;
         $batch_media = get_posts($query_args);
-        $total_items = $total_items + count($batch_media)
+        $total_items = $total_items + count($batch_media);
         $paged++;
 
     } while (!empty($batch_media));
@@ -78,9 +78,9 @@ function get_media($request)
         return new WP_Error('invalid_page', 'Invalid page, please check!', ['status' => 400]);
     }
 
-    $query_args['posts_per_page'] = $per_page,
-    $query_args['paged'] = $page + 1,
-    $paginated_media = get_posts($query_args)
+    $query_args['posts_per_page'] = $per_page;
+    $query_args['paged'] = $page + 1;
+    $paginated_media = get_posts($query_args);
 
     $response = [
         'results' => array_map('get_media_response_data', $paginated_media),
