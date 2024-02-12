@@ -9,7 +9,7 @@ add_action('rest_api_init', function () {
     register_rest_route('custom/v1', '/get-media', [
         'methods' => 'GET',
         'callback' => 'get_media',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'user_authentication',
     ]);
 });
 
@@ -23,71 +23,48 @@ add_action('rest_api_init', function () {
  */
 function get_media($request)
 {
-    $per_page = $request->get_param('size');
-    $raw_page = $request->get_param('page');
+    $per_page = max((int) $request->get_param('size'), 10);
+    $page = max((int) $request->get_param('page'), 0);
     $media_id = $request->get_param('id');
     $search_name = $request->get_param('name');
-    global $wpdb;
 
     if ($media_id !== null) {
         $single_media = get_post($media_id);
-
         if (!$single_media || $single_media->post_type !== 'attachment') {
             return new WP_Error('media_not_found', 'Media not found', ['status' => 404]);
         }
-
-        $response = get_media_response_data($single_media);
-
-        return new WP_REST_Response($response, 200);
+        return new WP_REST_Response(get_media_response_data($single_media), 200);
     }
 
-    $page = isset($raw_page) ? max(0, intval($raw_page)) : 0;
-
-    if ($per_page === null) {
-        $per_page = 10;
-    } elseif (intval($per_page) === 0) {
-        return new WP_Error('invalid_size', 'Invalid size, please check!', ['status' => 400]);
-    } else {
-        $per_page = intval($per_page);
-    }
-
+    // Define base query arguments
     $query_args = [
-        'post_type' => 'attachment',
+        'post_type'      => 'attachment',
         'post_mime_type' => ['image/jpeg', 'image/jpg', 'image/png'],
-        'post_status' => 'inherit',
-        'post_name' => $search_name
+        'post_status'    => 'inherit',
+        'posts_per_page' => $per_page,
+        'paged'          => $page + 1,
+        's'              => $search_name,
     ];
 
-    $where_conditions = [];
-    foreach ($query_args as $key => $value) {
-        if (is_array($value)) {
-            $where_conditions[] = "$key IN ('" . implode("', '", array_map('esc_sql', $value)) . "')";
-        } elseif ($key === 'post_name') {
-            $where_conditions[] = "$key LIKE '%" . esc_sql($value) . "%'";
-        } else {
-            $where_conditions[] = "$key = '" . esc_sql($value) . "'";
-        }
-    }
+    // Fetch media items
+    $media_items = new WP_Query($query_args);
 
-    $where_clause = implode(' AND ', $where_conditions);
-    $total_items = $wpdb->get_var("SELECT COUNT(ID) FROM $wpdb->posts WHERE $where_clause");
-    $total_pages = ceil($total_items / abs($per_page)) - 1;
-    if ($page > $total_pages && $total_items > 0) {
+    $total_items = $media_items->found_posts;
+    $total_pages = $media_items->max_num_pages;
+
+    if ($page >= $total_pages && $total_items > 0) {
         return new WP_Error('invalid_page', 'Invalid page, please check!', ['status' => 400]);
     }
 
-    $query_args['posts_per_page'] = $per_page;
-    $query_args['paged'] = $page + 1;
-    $paginated_media = get_posts($query_args);
-
+    $response_data = array_map('get_media_response_data', $media_items->posts);
     $response = [
-        'results' => array_map('get_media_response_data', $paginated_media),
-        'pager' => [
-            'count' => $total_items,
-            'pages' => $total_pages + 1,
+        'results' => $response_data,
+        'pager'   => [
+            'count'          => $total_items,
+            'pages'          => $total_pages,
             'items_per_page' => $per_page,
-            'current_page' => $page,
-            'next_page' => $page < $total_pages ? $page + 1 : null,
+            'current_page'   => $page,
+            'next_page'      => $page < $total_pages - 1 ? $page + 1 : null,
         ],
     ];
 
