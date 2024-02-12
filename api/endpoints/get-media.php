@@ -62,7 +62,6 @@ function get_media($request)
 
     $paged = 1;
     $total_items = 0;
-    $total_pages = ceil($total_items / $per_page) - 1;
 
     do {
         $query_args['posts_per_page'] = $batch_size;
@@ -73,6 +72,7 @@ function get_media($request)
 
     } while (!empty($batch_media));
 
+    $total_pages = ceil($total_items / $per_page) - 1;
 
     if ($page > $total_pages && $total_items > 0) {
         return new WP_Error('invalid_page', 'Invalid page, please check!', ['status' => 400]);
