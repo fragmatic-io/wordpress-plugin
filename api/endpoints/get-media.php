@@ -27,7 +27,7 @@ function get_media($request)
     $raw_page = $request->get_param('page');
     $media_id = $request->get_param('id');
     $search_name = $request->get_param('name');
-    $batch_size = 500;
+    global $wpdb;
 
     if ($media_id !== null) {
         $single_media = get_post($media_id);
@@ -53,34 +53,32 @@ function get_media($request)
 
     $query_args = [
         'post_type' => 'attachment',
+        'post_mime_type' => ['image/jpeg', 'image/jpg', 'image/png'],
         'post_status' => 'inherit',
-        'orderby' => 'date',
-        'order' => 'DESC',
-        'post_mime_type' => array('image/jpeg', 'image/jpg', 'image/png'),
-        's' => $search_name
+        'post_name' => $search_name
     ];
 
-    $paged = 1;
-    $total_items = 0;
-    $total_pages = ceil($total_items / $per_page) - 1;
+    $where_conditions = [];
+    foreach ($query_args as $key => $value) {
+        if (is_array($value)) {
+            $where_conditions[] = "$key IN ('" . implode("', '", array_map('esc_sql', $value)) . "')";
+        } elseif ($key === 'post_name') {
+            $where_conditions[] = "$key LIKE '%" . esc_sql($value) . "%'";
+        } else {
+            $where_conditions[] = "$key = '" . esc_sql($value) . "'";
+        }
+    }
 
-    do {
-        $query_args['posts_per_page'] = $batch_size,
-        $query_args['paged'] = $paged,
-        $batch_media = get_posts($query_args);
-        $total_items = $total_items + count($batch_media)
-        $paged++;
-
-    } while (!empty($batch_media));
-
-
+    $where_clause = implode(' AND ', $where_conditions);
+    $total_items = $wpdb->get_var("SELECT COUNT(ID) FROM $wpdb->posts WHERE $where_clause");
+    $total_pages = ceil($total_items / abs($per_page)) - 1;
     if ($page > $total_pages && $total_items > 0) {
         return new WP_Error('invalid_page', 'Invalid page, please check!', ['status' => 400]);
     }
 
-    $query_args['posts_per_page'] = $per_page,
-    $query_args['paged'] = $page + 1,
-    $paginated_media = get_posts($query_args)
+    $query_args['posts_per_page'] = $per_page;
+    $query_args['paged'] = $page + 1;
+    $paginated_media = get_posts($query_args);
 
     $response = [
         'results' => array_map('get_media_response_data', $paginated_media),
